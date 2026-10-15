@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ivserial user guide</title>
+<style>
+:root{--bg:#fff;--fg:#1d1d1f;--mut:#5a5a66;--acc:#1f5fa8;--code:#f3f4f7;--bd:#dfe2e8;--ok:#e9f3ea}
+@media (prefers-color-scheme: dark){:root{--bg:#16171a;--fg:#e8e8ec;--mut:#a3a5ad;--acc:#7fb0ef;--code:#23252b;--bd:#33363d;--ok:#1f2b22}}
+body{background:var(--bg);color:var(--fg);font-family:"Segoe UI",Helvetica,Arial,sans-serif;line-height:1.65;max-width:900px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:1.8em;margin-bottom:.1em} h2{font-size:1.3em;margin-top:2.2em;border-bottom:1px solid var(--bd);padding-bottom:.3em;color:var(--acc)}
+h3{font-size:1.05em;margin-top:1.4em}
+.sub{color:var(--mut);margin-top:0}
+pre,code{font-family:Consolas,Menlo,monospace}
+pre{background:var(--code);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;overflow-x:auto;line-height:1.45;font-size:.88em}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-size:.9em}
+.win{border:1px solid var(--bd);border-radius:8px;background:var(--code);padding:10px 12px;margin:.6em 0;font-size:.9em}
+.win .tabs{margin:-2px 0 8px;border-bottom:1px solid var(--bd)} .win .tabs span{display:inline-block;padding:3px 10px;margin-right:2px;border:1px solid var(--bd);border-bottom:none;border-radius:6px 6px 0 0;color:var(--mut)}
+.win .tabs span.on{background:var(--bg);color:var(--fg);font-weight:600}
+.win .row{margin:5px 0;line-height:2} .btn{display:inline-block;border:1px solid var(--bd);background:var(--bg);border-radius:5px;padding:0 10px;line-height:1.7}
+.fld{display:inline-block;border:1px solid var(--bd);background:var(--bg);padding:0 6px;line-height:1.6;font-family:Consolas,Menlo,monospace;font-size:.95em}
+.lab{display:inline-block;min-width:8.5em;color:var(--mut)} .mut{color:var(--mut)}
+
+table{border-collapse:collapse;width:100%;margin:.6em 0;font-size:.95em} td,th{border:1px solid var(--bd);padding:6px 10px;vertical-align:top;text-align:left} th{background:var(--code)}
+.note{border-left:4px solid var(--acc);background:var(--code);padding:8px 14px;border-radius:6px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px} @media (max-width:700px){.two{grid-template-columns:1fr}}
+.card{border:1px solid var(--bd);border-radius:8px;padding:10px 14px;background:var(--ok)}
+.tw{overflow-x:auto;margin:.6em 0} .tw table{margin:0;min-width:560px}
+nav ol{columns:2;font-size:.95em} @media (max-width:600px){nav ol{columns:1}}
+</style></head><body>
+<h1>ivserial &mdash; user guide</h1>
+<p class="sub">Exact symbolic tests of serial independence, version 1.0.1. Companion software to
+E. Ashtari Nezhad, <i>Information Variance and Exact Symbolic Tests of Serial Independence</i>.<br>
+Install: <code>pip install ivserial</code> &middot; PyPI: <a href="https://pypi.org/project/ivserial/">pypi.org/project/ivserial</a> &middot; Source: <a href="https://github.com/emaad7/ivserial">github.com/emaad7/ivserial</a></p>
+
+<nav><ol>
+<li><a href="#what">What the package does</a></li>
+<li><a href="#ways">Two ways to use it</a></li>
+<li><a href="#install">Installation</a></li>
+<li><a href="#data">Preparing your data</a></li>
+<li><a href="#gui">The window (GUI)</a></li>
+<li><a href="#python">Python</a></li>
+<li><a href="#cli">Command line</a></li>
+<li><a href="#output">Reading the output</a></li>
+<li><a href="#plan">Sample size and power</a></li>
+<li><a href="#resid">Residuals of fitted models</a></li>
+<li><a href="#trouble">Troubleshooting</a></li>
+<li><a href="#ref">Reference and citation</a></li>
+</ol></nav>
+
+<h2 id="what">1. What the package does</h2>
+<p><code>ivserial</code> tests whether a time series is a sequence of independent and identically distributed (i.i.d.) values. The test is <b>rank based and exact</b>: under independence its P-value is valid for every sample size and every continuous distribution, with no model, bandwidth or tuning parameter to choose. It reports</p>
+<ul>
+<li>the P-value of the proposed <b>combined test C</b> and of its two components: the <b>block statistic Q</b>, which sees dependence among several consecutive values, including dependence that is invisible in every pair, and the <b>portmanteau P2</b>, which looks at pairs at lags 1 and 2;</li>
+<li><b>V-hat</b>, the strength of the dependence on a scale from 0 to 1 (the serial Cram&eacute;r coefficient, which for pairs is Cram&eacute;r&rsquo;s V), and <b>Gamma-hat</b>, the efficiency of the test;</li>
+<li>the <b>patterns</b> of consecutive values that occur unusually often or rarely, which show what kind of dependence is present;</li>
+<li><b>sample size and power</b> calculations, and the explicit <b>null distribution</b> of Q.</li>
+</ul>
+
+<h2 id="ways">2. Two ways to use it</h2>
+<div class="two">
+<div class="card"><b>Without programming: the window (GUI)</b><br>
+Open a CSV or Excel file, pick a column, press <i>Run test</i>. Sample-size planning and the null distribution are in their own tabs.</div>
+<div class="card"><b>With code: Python or the command line</b><br>
+<code>serial_test(x)</code> in a Python script or notebook, or <code>ivserial data.csv</code> in a terminal. Suited to many series and to reproducible work.</div>
+</div>
+<p>Both use the same functions and give the same results: everything that can be done in code can also be done in the window, and the other way round. The table lists the correspondence.</p>
+<div class="tw"><table>
+<tr><th>Task</th><th>Window (GUI)</th><th>Python</th><th>Command line</th></tr>
+<tr><td>Test one series</td><td>Test tab, choose column, <i>Run test</i></td><td><code>serial_test(x)</code></td><td><code>ivserial file.csv -c NAME</code></td></tr>
+<tr><td>Screen many series</td><td>tick <i>test all columns</i></td><td>loop over columns</td><td><code>ivserial file.csv</code></td></tr>
+<tr><td>Prices to log returns</td><td><i>Transform: log returns</i></td><td><code>transform="logdiff"</code></td><td><code>-t logdiff</code></td></tr>
+<tr><td>Options (B, seed, m, d, level, lags, patterns)</td><td>Options and Portmanteau rows</td><td>arguments of <code>serial_test</code></td><td><code>--B --seed --m --d --alpha --lags --d2 --cells</code></td></tr>
+<tr><td>Save results</td><td><i>Save report...</i> (.txt or .json)</td><td><code>res.to_dict()</code>, <code>str(res)</code></td><td><code>--out report.txt --json res.json</code></td></tr>
+<tr><td>Sample size / power</td><td>Sample size &amp; power tab</td><td><code>required_sample_size</code>, <code>approximate_power</code></td><td><code>ivserial plan --gamma ...</code></td></tr>
+<tr><td>Default resolution for n</td><td><i>Resolution for n</i></td><td><code>choose_resolution(n)</code></td><td><code>ivserial plan ... --n N</code></td></tr>
+<tr><td>Null distribution, critical values</td><td>Null distribution tab</td><td><code>null_limit_summary</code>, <code>null_limit_sf</code></td><td><code>ivserial null --m 3 --d 4 --q 80</code></td></tr>
+</table></div>
+
+<h2 id="install">3. Installation</h2>
+<h3>Step 1: Python (once)</h3>
+<ul>
+<li><b>Windows:</b> download Python 3 from <code>https://www.python.org/downloads/</code>. In the first screen of the installer tick <b>"Add python.exe to PATH"</b>, then <i>Install Now</i>. Check in <i>Command Prompt</i>: <code>python --version</code>.</li>
+<li><b>macOS:</b> install from python.org; in <i>Terminal</i> use <code>python3</code> and <code>pip3</code> instead of <code>python</code> and <code>pip</code>.</li>
+<li><b>Linux:</b> Python is usually installed; for the window you may need <code>sudo apt install python3-tk</code>.</li>
+</ul>
+<h3>Step 2: the package, like any other Python module</h3>
+<p>Open a terminal (<i>Command Prompt</i> on Windows) and run <b>one</b> of</p>
+<pre>pip install ivserial                                     # from the Python Package Index (recommended)
+pip install git+https://github.com/emaad7/ivserial      # latest version from GitHub (needs Git)</pre>
+<p>The package page on the Python Package Index is <a href="https://pypi.org/project/ivserial/">pypi.org/project/ivserial</a>; the source code, examples and this guide are at <a href="https://github.com/emaad7/ivserial">github.com/emaad7/ivserial</a>. To update to a newer version later, run <code>pip install --upgrade ivserial</code>.</p>
+<p>Without internet access, download the wheel file <code>ivserial-1.0.1-py3-none-any.whl</code> (from the <i>Releases</i> page on GitHub or the <i>Download files</i> page on PyPI), open a terminal in the folder where you saved it, and run <code>pip install ivserial-1.0.1-py3-none-any.whl</code>.</p>
+<p>The required libraries <code>numpy</code> and <code>scipy</code> are installed automatically. For Excel files also run <code>pip install pandas openpyxl</code> (or <code>pip install "ivserial[excel]"</code>). If <code>pip</code> is not found, use <code>python -m pip install ...</code>.</p>
+<p>After installation you have</p>
+<ul>
+<li>the Python module: <code>import ivserial</code>;</li>
+<li>the command <code>ivserial</code> in any terminal;</li>
+<li>the command <code>ivserial-gui</code>, which opens the window (also <code>python -m ivserial</code>).</li>
+</ul>
+<p>Check: <code>ivserial --version</code> prints <code>ivserial 1.0.1</code>. This guide is installed with the package: <code>ivserial guide</code> opens it, as does the <i>User guide</i> button in the window.</p>
+<h3>Without installing</h3>
+<p>On GitHub press <i>Code</i> &rarr; <i>Download ZIP</i> and unzip the file, run <code>pip install numpy scipy</code> once, and double-click <code>run_gui_windows.bat</code> (Windows), <code>run_gui_mac_linux.command</code> (macOS, Linux) or <code>ivserial_gui.pyw</code>.</p>
+
+<h2 id="data">4. Preparing your data</h2>
+<ul>
+<li>A <b>CSV</b>, <b>TXT</b> or <b>Excel</b> (.xlsx) file, or any numeric array in Python.</li>
+<li><b>One series per column, rows in time order</b> (oldest first). A first row with names is optional; non-numeric columns such as dates are ignored; missing values are removed.</li>
+<li>At least 20 observations; several hundred give the most informative results.</li>
+<li><b>Prices or returns?</b> The test is applied to the values you give it. For prices and other trending series use the <b>log returns</b> (or differences): a trending series is never i.i.d., and the test would only detect the trend.</li>
+</ul>
+<p>The folder <code>examples</code> contains <code>exchange_rates.csv</code>, the 20 daily exchange rates analysed in the paper (prices; use the log-return transform).</p>
+
+<h2 id="gui">5. The window (GUI)</h2>
+<p>Start it with <code>ivserial-gui</code>, <code>python -m ivserial</code>, or by double-clicking as described above. It has three tabs.</p>
+<h3>Test tab</h3>
+<ol>
+<li><b>Open data file...</b> and choose your file.</li>
+<li>Choose the <b>series</b> (column), or tick <b>test all columns</b> to screen every column at once.</li>
+<li>Choose the <b>transform</b>: none, differences, or log returns (prices).</li>
+<li>Press <b>Run test</b>. <b>Save report...</b> writes the output as text (.txt) or as structured results (.json).</li>
+</ol>
+<p>The options can be left at their defaults: <i>B</i> = 9999 random permutations, block length <i>m</i> and classes <i>d</i> chosen automatically, level 0.05, portmanteau with lags 1 and 2. Keep the <b>seed</b> fixed to make the P-values reproducible.</p>
+<div class="win"><div class="tabs"><span class="on">Test</span><span class="">Sample size &amp; power</span><span class="">Null distribution</span></div><div class="row"><span class="btn">Open data file...</span> <span class="mut">exchange_rates.csv (20 numeric columns)</span></div><div class="row"><span class="lab">Series (column):</span><span class="fld" style="min-width:12em">China &#9662;</span> &#9744; test all columns (screening)</div><div class="row"><span class="lab">Transform:</span>&#9675; none &nbsp; &#9675; differences &nbsp; &#9679; log returns (prices)</div><div class="row"><span class="lab">Options:</span>Permutations B <span class="fld" style="min-width:4em">9999</span> Seed <span class="fld" style="min-width:2em">1</span> Block length m <span class="fld" style="min-width:3em">auto</span> Classes d <span class="fld" style="min-width:3em">auto</span> Level <span class="fld" style="min-width:3em">0.05</span></div><div class="row"><span class="lab">Portmanteau:</span>Lags <span class="fld" style="min-width:2em">2</span> Classes <span class="fld" style="min-width:3em">auto</span> Patterns shown <span class="fld" style="min-width:2em">8</span></div><div class="row"><span class="btn">Run test</span> <span class="btn">Save report...</span> <span class="btn">Help</span> <span class="btn">User guide</span></div></div>
+<p>After <i>Run test</i> the report appears below the buttons (here for the yuan):</p>
+<pre>Exact symbolic test of serial independence  [China]
+===================================================
+Observations n = 939
+Block statistic: m = 3 consecutive values, d = 5 quantile classes (125 patterns)
+Portmanteau: lags 1..2, d = 5 classes
+Random permutations B = 9999
+
+Test                                 Statistic     P-value
+C = min(p_Q, p_P2)  [proposed]                      0.0001
+Q  (blocks, permutation)               380.369      0.0001
+Q  (blocks, asymptotic)                           &lt; 0.0001
+P2 (lags, permutation)                 170.349      0.0001
+P2 (lags, asymptotic)                             &lt; 0.0001
+
+Serial independence is REJECTED at the 0.05 level (combined test C).
+Strength of dependence: V-hat = 0.109
+  (serial Cramer coefficient, 0 to 1: 0 = independent blocks, 1 = each value determines its block)
+Efficiency: Gamma-hat = 0.2864
+  (bias-corrected normalized information variance = approximate Bahadur slope; about 0 under independence)
+Planning: power 0.8 against dependence of this strength needs about 250 observations
+  (tau-hat = 2.943; Corollary 4.8 of the paper).
+
+Most over- and under-represented patterns (classes 1 = lowest ... 5 = highest):
+pattern         observed  expected  residual
+3-3-3                 41       7.5     12.24
+1-5-5                 20       7.5      4.57
+1-1-5                 19       7.5      4.20
+5-5-5                 17       7.5      3.47
+Residual = (observed - expected)/sqrt(expected); |residual| &gt; 3 is notable.</pre>
+<p>With <b>test all columns</b>, a screening table comes first, with P-values adjusted for multiple testing (Benjamini&ndash;Hochberg), followed by the full report for each series:</p>
+<pre>Screening summary (Benjamini-Hochberg adjustment)
+series                        n       p_C    adj. p   V-hat  Gamma-hat  decision
+Australia                   939    0.6368    0.7076   0.000    -0.0151  -
+Brazil                      939    0.2840    0.4327   0.025     0.0145  -
+China                       939    0.0001    0.0010   0.109     0.2864  reject
+India                       939    0.0001    0.0010   0.072     0.1247  reject
+Japan                       939    0.0030    0.0200   0.047     0.0535  reject
+Mexico                      939    0.0053    0.0265   0.038     0.0353  reject
+Taiwan                      939    0.0096    0.0384   0.046     0.0518  reject
+...                         (20 series in total)</pre>
+<h3>Sample size &amp; power tab</h3>
+<p>Enter the strength of dependence <i>Gamma</i>, or instead the coefficient <i>V</i> between 0 and 1 (and, if known, <i>tau</i>), at resolution (m, d), or press <b>Use last test</b> to take Gamma-hat, tau-hat, m and d from the test just run, for example on a pilot sample or a comparable series. Then</p>
+<ul>
+<li><b>Required sample size</b>: the number of observations for powers 0.5, 0.8, 0.9, 0.95 and your target power;</li>
+<li><b>Power for n</b>: the approximate power for a given number of observations;</li>
+<li><b>Resolution for n</b>: the default (m, d) for a given number of observations.</li>
+</ul>
+<div class="win"><div class="tabs"><span class="">Test</span><span class="on">Sample size &amp; power</span><span class="">Null distribution</span></div><div class="row">Gamma <span class="fld" style="min-width:4em">0.2864</span> tau <span class="fld" style="min-width:4em">2.9425</span> m <span class="fld" style="min-width:2em">3</span> d <span class="fld" style="min-width:2em">5</span> Level <span class="fld" style="min-width:3em">0.05</span></div><div class="row">Target power <span class="fld" style="min-width:3em">0.8</span> &nbsp; or: number of observations n <span class="fld" style="min-width:3em">500</span> V (optional, instead of Gamma) <span class="fld" style="min-width:3em"></span></div><div class="row"><span class="btn">Use last test</span> <span class="btn">Required sample size</span> <span class="btn">Power for n</span> <span class="btn">Resolution for n</span></div></div>
+<pre>Required number of observations (Gamma = 0.2864, V = 0.109, tau = 2.9425, (m, d) = (3, 5), level 0.05)
+   power         n
+    0.50       105
+    0.80       250   &lt;- target
+    0.90       368
+    0.95       491</pre>
+<h3>Null distribution tab</h3>
+<p>Shows the explicit limit L<sub>m,d</sub> of the block statistic under independence, its mean and variance, the critical values at the 10%, 5% and 1% levels, and the P-value of any value of Q.</p>
+<div class="win"><div class="tabs"><span class="">Test</span><span class="">Sample size &amp; power</span><span class="on">Null distribution</span></div><div class="row">m <span class="fld" style="min-width:2em">3</span> d <span class="fld" style="min-width:2em">4</span> Value of Q (optional) <span class="fld" style="min-width:4em">75</span> <span class="btn">Compute</span></div></div>
+<pre>Null limit for m = 3, d = 4 (64 patterns):  L = 2 x chi2(9) + 1 x chi2(36)
+mean = 54.00, variance = 144.00
+
+   level    critical value
+    0.10            69.832
+    0.05            75.257
+    0.01            86.294
+
+P(L &gt; 75) = 0.05175</pre>
+
+<h2 id="python">6. Python</h2>
+<pre>import numpy as np
+from ivserial import serial_test, required_sample_size, approximate_power
+
+x = np.loadtxt("returns.txt")            # any 1-d array, in time order
+res = serial_test(x, seed=1)             # B = 9999 permutations by default
+print(res)                               # full report, as in the window
+
+res.p_C, res.reject                      # P-value of C and decision at level 0.05
+res.p_Q, res.p_P2, res.p_Q_asymptotic    # components and asymptotic P-value
+res.cramer_v                             # strength of dependence, between 0 and 1
+res.gamma_hat, res.tau_hat               # efficiency and its standard deviation
+res.cells[:5]                            # most over- and under-represented patterns
+res.to_dict()                            # all results, e.g. for a pandas DataFrame
+
+serial_test(prices, transform="logdiff", label="WTI")    # prices -> log returns
+serial_test(x, m=3, d=4, lags=3, B=99999, alpha=0.01)    # options</pre>
+<p>Reading a data file as in the window:</p>
+<pre>from ivserial import read_table
+cols = read_table("examples/exchange_rates.csv")       # {column name: array}
+for name, v in cols.items():
+    r = serial_test(v, transform="logdiff", seed=1, label=name)
+    print(name, round(r.p_C, 4), round(r.cramer_v, 3))</pre>
+<div class="tw"><table>
+<tr><th>Function</th><th>Purpose</th></tr>
+<tr><td><code>serial_test(x, m, d, d_portmanteau, lags, B, seed, alpha, transform, label, n_cells)</code></td><td>the test; returns a result object with the attributes above</td></tr>
+<tr><td><code>required_sample_size(gamma, m, d, alpha, power, tau)</code></td><td>observations needed for a given power</td></tr>
+<tr><td><code>approximate_power(gamma, n, m, d, alpha, tau)</code></td><td>power for n observations</td></tr>
+<tr><td><code>sample_size_table(gamma, m, d, alpha, tau, powers)</code></td><td>sample sizes for several powers</td></tr>
+<tr><td><code>serial_cramer_v(gamma, m, d)</code>, <code>gamma_from_cramer_v(v, m, d)</code></td><td>convert between Gamma and V</td></tr>
+<tr><td><code>choose_resolution(n)</code></td><td>default (m, d)</td></tr>
+<tr><td><code>null_limit_summary(m, d)</code>, <code>null_limit_sf(q, m, d)</code>, <code>null_limit_quantile(alpha, m, d)</code></td><td>null limit L<sub>m,d</sub>: moments, critical values, P-values</td></tr>
+<tr><td><code>read_table(path)</code></td><td>numeric columns of a CSV, TXT or Excel file</td></tr>
+</table></div>
+
+<h2 id="cli">7. Command line</h2>
+<pre>ivserial data.csv                                     # every numeric column
+ivserial prices.csv -c Close -t logdiff --seed 1      # one column, log returns
+ivserial examples/exchange_rates.csv -t logdiff --seed 1 --out report.txt --json results.json
+ivserial plan --gamma 0.13 --tau 1.13 --m 3 --d 4 --n 350   # sample size and power
+ivserial plan --v 0.093 --tau 1.13 --m 3 --d 4               # the same, starting from V
+ivserial null --m 3 --d 4 --q 80                      # null limit and P-value of Q = 80
+ivserial gui                                          # open the window
+ivserial guide                                        # open this guide
+ivserial --help                                       # all options</pre>
+
+<h2 id="output">8. Reading the output</h2>
+<pre>Test                                 Statistic     P-value
+C = min(p_Q, p_P2)  [proposed]                      0.0001
+Q  (blocks, permutation)               380.369      0.0001
+Q  (blocks, asymptotic)                           &lt; 0.0001
+P2 (lags, permutation)                 170.349      0.0001
+P2 (lags, asymptotic)                             &lt; 0.0001
+
+Serial independence is REJECTED at the 0.05 level (combined test C).
+Strength of dependence: V-hat = 0.109
+Efficiency: Gamma-hat = 0.2864
+Planning: power 0.8 against dependence of this strength needs about 250 observations</pre>
+<div class="tw"><table>
+<tr><th>Item</th><th>Meaning</th></tr>
+<tr><td><b>C</b></td><td>The test to use. A P-value below the level (e.g. 0.05) rejects serial independence.</td></tr>
+<tr><td><b>Q</b>, <b>P2</b></td><td>Blocks of m consecutive values, and pairs at lags 1 and 2. C combines them exactly.</td></tr>
+<tr><td>permutation / asymptotic</td><td>Permutation P-values are exact; asymptotic ones use the explicit limits and are accurate for n &ge; 350.</td></tr>
+<tr><td><b>V-hat</b></td><td>Strength of dependence, between 0 and 1 (serial Cram&eacute;r coefficient): 0 means that blocks of m consecutive classes are independent, 1 that the class of any one value determines its whole block. For m = 2 it is Cram&eacute;r&rsquo;s V of consecutive classes. Compare values at the same (m, d).</td></tr>
+<tr><td><b>Gamma-hat</b></td><td>Efficiency: the normalized information variance, the approximate Bahadur slope of the test; Gamma = (d<sup>m&minus;1</sup> &minus; 1)&middot;V&sup2;. It drives the sample-size calculation.</td></tr>
+<tr><td><b>Patterns</b></td><td>Each value is assigned to one of d classes by its rank (1 = lowest, d = highest). Residual = (observed &minus; expected)/&radic;expected; |residual| &gt; 3 is notable.</td></tr>
+</table></div>
+<p><b>Example (Chinese yuan, from the paper).</b> The pattern <code>3-3-3</code> occurs 41 times against 7.5 expected (residual 12.2): runs of near-zero changes around the official reference rate. The patterns <code>1-5-5</code>, <code>1-1-5</code> and <code>5-5-5</code>, made of large moves of either sign, reflect volatility clustering.</p>
+<div class="note">A rejection means that the values are not i.i.d. The patterns indicate the kind of dependence, not a particular model.</div>
+
+<h2 id="plan">9. Sample size and power</h2>
+<p>The normalized information variance Gamma is the efficiency of the test (its approximate Bahadur slope), so it converts directly into a sample size (Corollary 4.8 of the paper):</p>
+<pre>power &asymp; &Phi;( (K&middot;Gamma + &mu;<sub>0</sub> &minus; q<sub>&alpha;</sub>) / &radic;(K&middot;tau&sup2; + V<sub>0</sub>) ),   K = n &minus; m + 1,</pre>
+<p>where &mu;<sub>0</sub>, V<sub>0</sub> and q<sub>&alpha;</sub> are the mean, variance and upper &alpha; point of L<sub>m,d</sub>. <code>serial_test</code> estimates both Gamma and tau from the data, so a pilot sample or a comparable series gives a realistic plan. With tau = 0 the formula is accurate for weak dependence and otherwise optimistic. For example, for an ARCH(1) process at (m, d) = (3, 4), with Gamma = 0.13 and tau = 1.13 estimated from data, the predicted power at n = 350 is 0.85, against 0.82 in simulations; with tau = 0 it would be 0.98.</p>
+
+<h2 id="resid">10. Residuals of fitted models</h2>
+<p>The test can be applied to residuals, for example standardized GARCH residuals, to check whether dependence remains. The P-values are then only approximately exact. When the model is estimated <b>efficiently</b> (maximum likelihood with the correct innovation distribution), they remain valid and are slightly conservative (Theorem 4.11 of the paper). After Gaussian quasi-maximum likelihood with non-normal innovations they can be misleading, especially for squared residuals; then use a model-based bootstrap: simulate from the fitted model, re-estimate, and recompute the statistic (Section 4.5 of the paper).</p>
+
+<h2 id="trouble">11. Troubleshooting</h2>
+<div class="tw"><table>
+<tr><th>Message</th><th>Solution</th></tr>
+<tr><td><code>'python' is not recognized</code> (Windows)</td><td>Reinstall Python and tick <i>Add python.exe to PATH</i>, or use <code>py</code> instead of <code>python</code>.</td></tr>
+<tr><td><code>'pip' is not recognized</code></td><td>Use <code>python -m pip install ...</code>.</td></tr>
+<tr><td><code>No module named numpy</code> (or scipy)</td><td><code>pip install numpy scipy</code></td></tr>
+<tr><td>Excel file cannot be read</td><td><code>pip install pandas openpyxl</code></td></tr>
+<tr><td><code>No module named tkinter</code> (Linux)</td><td><code>sudo apt install python3-tk</code></td></tr>
+<tr><td>Double-click does nothing (Windows)</td><td>Right-click the file, <i>Open with</i>, Python; or run <code>python ivserial_gui.pyw</code> in Command Prompt.</td></tr>
+<tr><td>"only ... blocks per pattern"</td><td>The series is short for the chosen (m, d); use the automatic choice or smaller values.</td></tr>
+</table></div>
+
+<h2 id="ref">12. Reference and citation</h2>
+<p>Default resolution: (m, d) = (3, 3) for n &lt; 300, (3, &lfloor;(n&minus;300)/400&rfloor;+4) for 300 &le; n &lt; 1500, and m = &lfloor;log n/(2 log 3)&rfloor;, d = 3 beyond; portmanteau classes 3, 4 or 5. Ties are broken at random, which keeps the test exact. P-value = (1 + #{permuted statistics &ge; observed})/(B + 1). Computing time: about 1 second for n = 1000 with B = 9999, and about 15 seconds for n = 100,000 with B = 999.</p>
+<p>If you use the package, please cite: E. Ashtari Nezhad, <i>Information Variance and Exact Symbolic Tests of Serial Independence</i>. License: MIT.</p>
+<p>Questions, bug reports and suggestions: open an issue at <a href="https://github.com/emaad7/ivserial/issues">github.com/emaad7/ivserial/issues</a>.</p>
+</body></html>

@@ -1,0 +1,5 @@
+[console_scripts]
+ivserial = ivserial.cli:main
+
+[gui_scripts]
+ivserial-gui = ivserial.gui:main
